@@ -5,6 +5,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,19 +91,16 @@ public class AlxR34Dl {
 
             //Download all files one by one
             String fitTarget = targetDirectory.deleteCharAt(0).toString();
+            ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             for(String target : targetFiles){
-                BufferedInputStream fileLoader = new BufferedInputStream(new URL(target).openStream());
-                FileOutputStream fileOutputStream = new FileOutputStream(fitTarget + "/" + target.split("/")[5]);
-                byte dataBuffer[] = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = fileLoader.read(dataBuffer, 0, 1024)) != -1) {
-                    fileOutputStream.write(dataBuffer, 0, bytesRead);
-                }
-                fileLoader.close();
+                executor.submit(new DownloadThread(target, fitTarget));
             }
+            executor.shutdown();
 
             //Final message. Goodbye.
-            System.out.println("Downloads finished. Errorless or complete downloads are not guaranteed.");
+            if(executor.isTerminated()){
+                System.out.println("Downloads finished. Errorless or complete downloads are not guaranteed.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
